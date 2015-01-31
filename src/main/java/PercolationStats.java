@@ -30,6 +30,11 @@ public class PercolationStats {
     sites = new int[N * N];
     indices = new int[N * N];
 
+    for (int p = 0; p < N * N; p++) { // sites
+      sites[p] = p;
+      indices[p] = p;
+    }
+
     init();
   }
 
@@ -38,11 +43,6 @@ public class PercolationStats {
    */
   private void init() {
     numberOpened = 0;
-
-    for (int p = 0; p < N * N; p++) { // sites
-      sites[p] = p;
-      indices[p] = p;
-    }
   }
 
   /**
@@ -154,10 +154,9 @@ public class PercolationStats {
     for (int t = 0; t < T; t++) {
       ps.init();
       Percolation percolation = new Percolation(N);
-      ps.openRandom(percolation); // to handle case of N = 1
-      while (!percolation.percolates()) {
+      do {
         ps.openRandom(percolation);
-      }
+      } while (!percolation.percolates());
       ps.addStatistic(t);
     }
 

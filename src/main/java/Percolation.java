@@ -9,7 +9,7 @@
  */
 public class Percolation {
   private final int N; // length and width of square grid
-  private final WeightedQuickUnionUF WEIGHTED_QUICK_UNION, WEIGHTED_QUICK_UNION_VIRTUAL;
+  private final WeightedQuickUnionUF WEIGHTED_QUICK_UNION, WEIGHTED_QUICK_UNION_BACKWASH;
 
   private final boolean grid[][]; // open is true, full is false;
 
@@ -21,11 +21,13 @@ public class Percolation {
    * @param n Length and width of square grid.
    */
   public Percolation(final int n) {
-    if (n <= 0) { throw new IllegalArgumentException("Need N > 0!"); }
+    if (n <= 0) {
+      throw new IllegalArgumentException("Need N > 0!");
+    }
 
     N = n;
-    WEIGHTED_QUICK_UNION = new WeightedQuickUnionUF(N * N);
-    WEIGHTED_QUICK_UNION_VIRTUAL = new WeightedQuickUnionUF(N * N + 2); // with backwash
+    WEIGHTED_QUICK_UNION = new WeightedQuickUnionUF(N * N + 1);
+    WEIGHTED_QUICK_UNION_BACKWASH = new WeightedQuickUnionUF(N * N + 2); // with backwash
 
     grid = new boolean[N][N];
 
@@ -37,14 +39,6 @@ public class Percolation {
         grid[r][c] = false; // Initialize all sites to be blocked.
       }
     }
-
-    // connect virtual nodes
-    for (int p = TOP_VIRTUAL, r = 0; p <= BOTTOM_VIRTUAL; p++, r = N - 1) {
-      for (int c = 0; c < N; c++) {
-        int q = r * N + c;
-        WEIGHTED_QUICK_UNION_VIRTUAL.union(p, q);
-      }
-    }
   }
 
   /**
@@ -54,10 +48,14 @@ public class Percolation {
    * @param j Column of grid (1 ≤ j ≤ N).
    */
   public void open(final int i, final int j) {
-    if (i < 1 || i > N || j < 1 || j > N) { throw new IndexOutOfBoundsException("Need 1 ≤ i,j ≤ " + N); }
+    if (i < 1 || i > N || j < 1 || j > N) {
+      throw new IndexOutOfBoundsException("Need 1 ≤ i,j ≤ " + N);
+    }
 
     final int r = i - 1, c = j - 1;
-    if (grid[r][c]) { return; }
+    if (grid[r][c]) {
+      return;
+    }
 
     grid[r][c] = true;
     int p = r * N + c;
@@ -77,6 +75,17 @@ public class Percolation {
         union(p, q);
       }
     }
+
+    // connect top virtual node, if necessary
+    if (r == 0) {
+      WEIGHTED_QUICK_UNION.union(p, TOP_VIRTUAL);
+      WEIGHTED_QUICK_UNION_BACKWASH.union(p, TOP_VIRTUAL);
+    }
+
+    // connect bottom virtual node, if necessary
+    if (r == N - 1) {
+      WEIGHTED_QUICK_UNION_BACKWASH.union(p, BOTTOM_VIRTUAL);
+    }
   }
 
   /**
@@ -87,7 +96,9 @@ public class Percolation {
    * @return True if site is open.  False otherwise.
    */
   public boolean isOpen(final int i, final int j) {
-    if (i < 1 || i > N || j < 1 || j > N) { throw new IndexOutOfBoundsException("Need 1 ≤ i,j ≤ " + N); }
+    if (i < 1 || i > N || j < 1 || j > N) {
+      throw new IndexOutOfBoundsException("Need 1 ≤ i,j ≤ " + N);
+    }
 
     return grid[i - 1][j - 1];
   }
@@ -100,9 +111,13 @@ public class Percolation {
    * @return True if site is full or blocked.  False otherwise.
    */
   public boolean isFull(final int i, final int j) {
-    if (i < 1 || i > N || j < 1 || j > N) { throw new IndexOutOfBoundsException("Need 1 ≤ i,j ≤ " + N); }
+    if (i < 1 || i > N || j < 1 || j > N) {
+      throw new IndexOutOfBoundsException("Need 1 ≤ i,j ≤ " + N);
+    }
 
-    return !isOpen(i, j);
+    final int r = i - 1, c = j - 1, p = r * N + c;
+
+    return connected(TOP_VIRTUAL, p);
   }
 
   /**
@@ -111,7 +126,7 @@ public class Percolation {
    * @return True if site percolates.  False otherwise.
    */
   public boolean percolates() {
-    return WEIGHTED_QUICK_UNION_VIRTUAL.connected(TOP_VIRTUAL, BOTTOM_VIRTUAL);
+    return WEIGHTED_QUICK_UNION_BACKWASH.connected(TOP_VIRTUAL, BOTTOM_VIRTUAL);
   }
 
   /**
@@ -122,7 +137,7 @@ public class Percolation {
    */
   private void union(final int p, final int q) {
     WEIGHTED_QUICK_UNION.union(p, q);
-    WEIGHTED_QUICK_UNION_VIRTUAL.union(p, q);
+    WEIGHTED_QUICK_UNION_BACKWASH.union(p, q);
   }
 
   /**
