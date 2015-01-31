@@ -11,7 +11,7 @@ public class Percolation {
   private final int N; // length and width of square grid
   private final WeightedQuickUnionUF WEIGHTED_QUICK_UNION, WEIGHTED_QUICK_UNION_BACKWASH;
 
-  private final boolean grid[][]; // open is true, full is false;
+  private final boolean[][] grid; // open is true, full is false;
 
   private final int TOP_VIRTUAL, BOTTOM_VIRTUAL; // virtual nodes to facilitate percolation determination
 
@@ -176,7 +176,12 @@ public class Percolation {
    * @param args Input arguments.
    */
   public static void main(String[] args) {
-    final int n = args.length > 0 ? Integer.parseInt(args[0]) : 3;
+    int n;
+    if (args.length > 0) {
+      n = Integer.parseInt(args[0]);
+    } else {
+      n = 3;
+    }
 
     Percolation g = new Percolation(n);
 

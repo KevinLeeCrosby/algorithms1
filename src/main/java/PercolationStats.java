@@ -11,18 +11,18 @@ public class PercolationStats {
    * Perform T independent experiments on an N-by-N grid.
    *
    * @param n Length and width of square grid.
-   * @param τ Number of experiments to run.
+   * @param t Number of experiments to run.
    */
-  public PercolationStats(final int n, final int τ) {
+  public PercolationStats(final int n, final int t) {
     if (n <= 0) {
       throw new IllegalArgumentException("Need N > 0!");
     }
-    if (τ <= 0) {
+    if (t <= 0) {
       throw new IllegalArgumentException("Need T > 0!");
     }
 
     N = n;
-    T = τ;
+    T = t;
     a = new double[T];
 
     int N2 = N * N;
@@ -32,7 +32,7 @@ public class PercolationStats {
       sites[p] = p;
     }
 
-    for (int t = 0; t < T; t++) {
+    for (int trial = 0; trial < T; trial++) {
       StdRandom.shuffle(sites);
       int numberOpened = 0;
       Percolation percolation = new Percolation(N);
@@ -42,7 +42,7 @@ public class PercolationStats {
         int j = p % N + 1; // column of grid (1 ≤ j ≤ N).
         percolation.open(i, j);
       } while (!percolation.percolates());
-      a[t] = (double) numberOpened / (double) N2;
+      a[trial] = (double) numberOpened / (double) N2;
     }
   }
 
