@@ -7,6 +7,7 @@ import static java.lang.Math.sqrt;
  */
 public class PercolationStats {
   private final int N, T;
+  private final double[] a;
 
   private final int[] sites; // to keep track of opened and blocked sites
   private final int[] indices; // to keep track of indices of opened and blocked sites
@@ -24,6 +25,7 @@ public class PercolationStats {
 
     N = n;
     T = t;
+    a = new double[T];
 
     sites = new int[N * N];
     indices = new int[N * N];
@@ -46,52 +48,47 @@ public class PercolationStats {
   /**
    * Sample mean of percolation threshold.
    *
-   * @param a Double array to take mean of.
    * @return Mean of a.
    */
-  public double mean(double[] a) {
+  public double mean() {
     return StdStats.mean(a);
   }
 
   /**
    * Sample standard deviation of percolation threshold.
    *
-   * @param a Double array to take sample standard deviation of.
    * @return Sample standard deviation of a.
    */
-  public Double stddev(double[] a) {
+  public double stddev() {
     return T > 1 ? StdStats.stddev(a) : Double.NaN;
   }
 
   /**
    * Low endpoint of 95% confidence interval.
    *
-   * @param a Double array to confidence interval of.
    * @return Low endpoint of 95% confidence interval.
    */
-  public double confidenceLo(double[] a) {
-    return mean(a) - 1.96 * stddev(a) / sqrt(T);
+  public double confidenceLo() {
+    return mean() - 1.96 * stddev() / sqrt(T);
   }
 
   /**
    * High endpoint of 95% confidence interval.
    *
-   * @param a Double array to confidence interval of.
    * @return High endpoint of 95% confidence interval.
    */
-  public double confidenceHi(double[] a) {
-    return mean(a) + 1.96 * stddev(a) / sqrt(T);
+  public double confidenceHi() {
+    return mean() + 1.96 * stddev() / sqrt(T);
   }
 
   /**
    * Print statistics.
    *
-   * @param a Double array to print statistics of.
    */
-  private void printStats(double[] a) {
+  private void printStats() {
     System.out.println(
         String.format("mean                    = %f\nstddev                  = %f\n95%% confidence interval = %f, %f",
-            mean(a), stddev(a), confidenceLo(a), confidenceHi(a))
+            mean(), stddev(), confidenceLo(), confidenceHi())
     );
   }
 
@@ -128,14 +125,11 @@ public class PercolationStats {
   }
 
   /**
-   * Return fraction opened.
-   *
-   * @return Fraction of opened sites.
+   * Add fraction opened to statistics.
    */
-  private double fractionOpened() {
-    return (double)numberOpened / (double)(N * N);
+  private void addStatistic(final int t) {
+    a[t] = (double)numberOpened / (double)(N * N);
   }
-
 
   /**
    * Test client.
@@ -156,7 +150,6 @@ public class PercolationStats {
     }
 
     final int N = ps.N, T = ps.T;
-    double[] a = new double[T];
 
     for (int t = 0; t < T; t++) {
       ps.init();
@@ -165,9 +158,9 @@ public class PercolationStats {
       while (!percolation.percolates()) {
         ps.openRandom(percolation);
       }
-      a[t] = ps.fractionOpened();
+      ps.addStatistic(t);
     }
 
-    ps.printStats(a);
+    ps.printStats();
   }
 }
