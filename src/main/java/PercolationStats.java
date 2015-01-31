@@ -1,5 +1,3 @@
-import static java.lang.Math.sqrt;
-
 /**
  * Monte Carlo Simulation for Percolation.
  *
@@ -9,40 +7,43 @@ public class PercolationStats {
   private final int N, T;
   private final double[] a;
 
-  private final int[] sites; // to keep track of opened and blocked sites
-  private final int[] indices; // to keep track of indices of opened and blocked sites
-  private int numberOpened; // to keep track of opened and blocked sites
-
   /**
    * Perform T independent experiments on an N-by-N grid.
    *
    * @param n Length and width of square grid.
-   * @param t Number of experiments to run.
+   * @param τ Number of experiments to run.
    */
-  public PercolationStats(final int n, final int t) {
-    if (n <= 0) { throw new IllegalArgumentException("Need N > 0!"); }
-    if (t <= 0) { throw new IllegalArgumentException("Need T > 0!"); }
-
-    N = n;
-    T = t;
-    a = new double[T];
-
-    sites = new int[N * N];
-    indices = new int[N * N];
-
-    for (int p = 0; p < N * N; p++) { // sites
-      sites[p] = p;
-      indices[p] = p;
+  public PercolationStats(final int n, final int τ) {
+    if (n <= 0) {
+      throw new IllegalArgumentException("Need N > 0!");
+    }
+    if (τ <= 0) {
+      throw new IllegalArgumentException("Need T > 0!");
     }
 
-    init();
-  }
+    N = n;
+    T = τ;
+    a = new double[T];
 
-  /**
-   * Initialize fields.
-   */
-  private void init() {
-    numberOpened = 0;
+    int N2 = N * N;
+
+    int[] sites = new int[N2]; // to keep track of opened and blocked sites
+    for (int p = 0; p < N2; p++) {
+      sites[p] = p;
+    }
+
+    for (int t = 0; t < T; t++) {
+      StdRandom.shuffle(sites);
+      int numberOpened = 0;
+      Percolation percolation = new Percolation(N);
+      do {
+        int p = sites[numberOpened++];
+        int i = p / N + 1; // row of grid (1 ≤ i ≤ N).
+        int j = p % N + 1; // column of grid (1 ≤ j ≤ N).
+        percolation.open(i, j);
+      } while (!percolation.percolates());
+      a[t] = (double) numberOpened / (double) N2;
+    }
   }
 
   /**
@@ -69,7 +70,7 @@ public class PercolationStats {
    * @return Low endpoint of 95% confidence interval.
    */
   public double confidenceLo() {
-    return mean() - 1.96 * stddev() / sqrt(T);
+    return mean() - 1.96 * stddev() / Math.sqrt(T);
   }
 
   /**
@@ -78,57 +79,17 @@ public class PercolationStats {
    * @return High endpoint of 95% confidence interval.
    */
   public double confidenceHi() {
-    return mean() + 1.96 * stddev() / sqrt(T);
+    return mean() + 1.96 * stddev() / Math.sqrt(T);
   }
 
   /**
    * Print statistics.
-   *
    */
   private void printStats() {
     System.out.println(
         String.format("mean                    = %f\nstddev                  = %f\n95%% confidence interval = %f, %f",
             mean(), stddev(), confidenceLo(), confidenceHi())
     );
-  }
-
-  /**
-   * Rearrange site and index from blocked to open.
-   *
-   * @param site1 Site to rearrange with site at index.
-   * @param index2 Index to rearrange with index at site.
-   */
-  private void rearrange(final int site1, final int index2) {
-    int index1 = indices[site1];
-    int site2 = sites[index2];
-
-    int site = sites[index1];
-    sites[index1] = sites[index2];
-    sites[index2] = site;
-
-    int index = indices[site1];
-    indices[site1] = indices[site2];
-    indices[site2] = index;
-  }
-
-  /**
-   * Open random blocked site.
-   */
-  private void openRandom(final Percolation percolation) {
-    int index = StdRandom.uniform(numberOpened, N * N);
-    int p = sites[index]; // site
-    assert index == indices[p] : "Sites and indices are out of sync";
-    int i = p / N + 1; // row of grid (1 ≤ i ≤ N).
-    int j = p % N + 1; // column of grid (1 ≤ j ≤ N).
-    percolation.open(i, j);
-    rearrange(p, numberOpened++);
-  }
-
-  /**
-   * Add fraction opened to statistics.
-   */
-  private void addStatistic(final int t) {
-    a[t] = (double)numberOpened / (double)(N * N);
   }
 
   /**
@@ -147,17 +108,6 @@ public class PercolationStats {
       default:
         System.err.println("Usage:\n  PercolationStats [N] [T]\n  (N = length and width of grid, T = number of tests)");
         return;
-    }
-
-    final int N = ps.N, T = ps.T;
-
-    for (int t = 0; t < T; t++) {
-      ps.init();
-      Percolation percolation = new Percolation(N);
-      do {
-        ps.openRandom(percolation);
-      } while (!percolation.percolates());
-      ps.addStatistic(t);
     }
 
     ps.printStats();
