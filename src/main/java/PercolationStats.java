@@ -61,7 +61,10 @@ public class PercolationStats {
    * @return Sample standard deviation of a.
    */
   public double stddev() {
-    return T > 1 ? StdStats.stddev(a) : Double.NaN;
+    if (T > 1) {
+      return StdStats.stddev(a);
+    }
+    return Double.NaN;
   }
 
   /**
