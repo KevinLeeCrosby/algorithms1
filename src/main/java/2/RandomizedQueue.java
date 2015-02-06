@@ -137,8 +137,8 @@ public class RandomizedQueue<Item> implements Iterable<Item> {
     public RandomArrayIterator() {
       i = 0;
       b = (Item[]) new Object[n]; // to make iterators independent
-      for (int i = head, j = 0; j < n; i = (i + 1) % capacity, j++) {
-        b[j] = a[i];
+      for (int j = head, k = 0; k < n; j = (j + 1) % capacity, k++) {
+        b[k] = a[j];
       }
       StdRandom.shuffle(b);
     }

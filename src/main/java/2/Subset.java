@@ -18,7 +18,7 @@ public class Subset {
   public static void main(String[] args) {
     if (args.length != 1) {
       System.err.println("Usage:\n  echo A B C D E F G H I | java Subset n");
-      System.exit(0);
+      return;
     }
 
     RandomizedQueue<String> bag = new RandomizedQueue<>();
@@ -29,7 +29,7 @@ public class Subset {
     int n = bag.size();
 
     final int k = Integer.parseInt(args[0]);
-    if (k < 0 || k > n - 1) {
+    if (k < 0 || k > n) {
       throw new IndexOutOfBoundsException("Need 0 ≤ k ≤ " + n);
     }
 

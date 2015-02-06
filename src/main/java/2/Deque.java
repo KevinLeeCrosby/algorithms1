@@ -143,7 +143,7 @@ public class Deque<Item> implements Iterable<Item> {
    * ListIterator
    */
   private class ListIterator implements Iterator<Item> {
-    Node current = fwd.next;
+    private Node current = fwd.next;
 
     @Override
     public boolean hasNext() {
