@@ -26,12 +26,15 @@ public class Point implements Comparable<Point> {
    * the nearest representable value. Thus, for example, it is guaranteed that (9.0/7.0 == 45.0/35.0). In other
    * words, it's sometimes OK to compare floating-point numbers for exact equality (but only when you know exactly
    * what you are doing!)
-   *
-   * @param p1 First point to compare.
-   * @param p2 Second point to compare.
-   * @return -1, 0, or 1 for less than, equal, or greater than, respectively.
    */
   public final Comparator<Point> SLOPE_ORDER = new Comparator<Point>() {
+    /**
+     * Compare slopes by point.
+     *
+     * @param p1 First point to compare.
+     * @param p2 Second point to compare.
+     * @return -1, 0, or 1 for less than, equal, or greater than, respectively.
+     */
     @Override
     public int compare(final Point p1, final Point p2) {
       if (slopeTo(p1) < slopeTo(p2)) return -1;
