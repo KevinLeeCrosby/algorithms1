@@ -63,7 +63,8 @@ public class Fast {
           Arrays.sort(slopePoints, eq, end);
           if (points[p].compareTo(slopePoints[eq]) < 1) { // avoid horizontal line permutations
             System.out.print(points[p]);
-            for (int i = eq; i < end; i++) System.out.print(" -> " + slopePoints[i]);
+            for (int i = eq; i < end; i++)
+              System.out.print(" -> " + slopePoints[i]);
             System.out.println();
             points[p].drawTo(slopePoints[end - 1]);
             StdDraw.show(0); // display to screen all at once

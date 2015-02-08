@@ -14,25 +14,24 @@ import java.util.Comparator;
 
 public class Point implements Comparable<Point> {
 
-  // compare points by slope
+  /**
+   * Formally, the point (x1, y1) is less than the point (x2, y2) if and only if the slope (y1 − y0) / (x1 − x0) is
+   * less than the slope (y2 − y0) / (x2 − x0). Treat horizontal, vertical, and degenerate line segments as in the
+   * slopeTo() method.
+   *
+   * NOTE:
+   * In general, it is hazardous to compare a and b for equality if either is susceptible to floating-point roundoff
+   * error. However, in this case, you are computing b/a, where a and b are integers between -32,767 and 32,767. In
+   * Java (and the IEEE 754 floating-point standard), the result of a floating-point operation (such as division) is
+   * the nearest representable value. Thus, for example, it is guaranteed that (9.0/7.0 == 45.0/35.0). In other
+   * words, it's sometimes OK to compare floating-point numbers for exact equality (but only when you know exactly
+   * what you are doing!)
+   *
+   * @param p1 First point to compare.
+   * @param p2 Second point to compare.
+   * @return -1, 0, or 1 for less than, equal, or greater than, respectively.
+   */
   public final Comparator<Point> SLOPE_ORDER = new Comparator<Point>() {
-    /**
-     * Formally, the point (x1, y1) is less than the point (x2, y2) if and only if the slope (y1 − y0) / (x1 − x0) is
-     * less than the slope (y2 − y0) / (x2 − x0). Treat horizontal, vertical, and degenerate line segments as in the
-     * slopeTo() method.
-     *
-     * NOTE:
-     * In general, it is hazardous to compare a and b for equality if either is susceptible to floating-point roundoff
-     * error. However, in this case, you are computing b/a, where a and b are integers between -32,767 and 32,767. In
-     * Java (and the IEEE 754 floating-point standard), the result of a floating-point operation (such as division) is
-     * the nearest representable value. Thus, for example, it is guaranteed that (9.0/7.0 == 45.0/35.0). In other
-     * words, it's sometimes OK to compare floating-point numbers for exact equality (but only when you know exactly
-     * what you are doing!)
-     *
-     * @param p1 First point to compare.
-     * @param p2 Second point to compare.
-     * @return -1, 0, or 1 for less than, equal, or greater than, respectively.
-     */
     @Override
     public int compare(final Point p1, final Point p2) {
       if (slopeTo(p1) < slopeTo(p2)) return -1;
