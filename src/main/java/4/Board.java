@@ -92,11 +92,12 @@ public class Board {
   public Board twin() {
     Board twin = new Board(grid);
     boolean loop = true;
-    for (int r = 0; loop; r++) {
+    for (int r = 0; loop && r < N; r++) {
       for (int c = 0; c < N - 1; c++) {
         if (twin.grid[r][c] == 0 || twin.grid[r][c + 1] == 0) continue;
         exch(twin.grid, r, r, c, c + 1);
         loop = false;
+        break;
       }
     }
     return twin;
@@ -131,30 +132,34 @@ public class Board {
     Queue<Board> neighbors = new Queue<>();
 
     // find blank
-    int r, c = 0;
-    for (r = 0; r < N; r++) {
-      for (c = 0; c < N; c++) {
-        if (grid[r][c] == 0) break;
+    boolean loop = true;
+    int r = 0, c = 0;
+    for (int row = 0; loop && row < N; row++) {
+      for (int col = 0; col < N; col++) {
+        if (grid[row][col] == 0) {
+          r = row;
+          c = col;
+          loop = false;
+          break;
+        }
       }
     }
 
     for (int dr = -1; dr <= +1; dr += 2) {
       int rp = r + dr;
       if (rp >= 0 && rp < N) {
-        exch(grid, r, rp, c, c);
         Board neighbor = new Board(grid);
+        exch(neighbor.grid, r, rp, c, c);
         neighbors.enqueue(neighbor);
-        exch(grid, r, rp, c, c);
       }
     }
 
     for (int dc = -1; dc <= +1; dc += 2) {
       int cp = c + dc;
       if (cp >= 0 && cp < N) {
-        exch(grid, r, r, c, cp);
         Board neighbor = new Board(grid);
+        exch(neighbor.grid, r, r, c, cp);
         neighbors.enqueue(neighbor);
-        exch(grid, r, r, c, cp);
       }
     }
     return neighbors;
