@@ -7,11 +7,11 @@ import java.util.Map;
  * @author Kevin Crosby
  */
 public class Board {
+  private static final Map<char[], Integer> manhattan = new HashMap<>();
   private final int N;
   private final int N2;
   private final char[] grid;
   private final int blank;
-  private static Map<char[], Integer> manhattan = new HashMap<>();
 
   /**
    * Construct a board from an N-by-N array of blocks
