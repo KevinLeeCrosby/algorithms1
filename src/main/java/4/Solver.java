@@ -45,10 +45,10 @@ public class Solver {
     @Override
     public int compareTo(final Node that) {
       int f1 = this.priority(), f2 = that.priority();
-      if(f1 < f2) { return -1; }
-      if(f1 > f2) { return +1; }
-      if(this.h < that.h) { return -1; }
-      if(this.h > that.h) { return +1; }
+      if (f1 < f2) { return -1; }
+      if (f1 > f2) { return +1; }
+      if (this.h < that.h) { return -1; }
+      if (this.h > that.h) { return +1; }
       return 0;
     }
   }
@@ -59,7 +59,7 @@ public class Solver {
    * @param initial Initial board to start solving.
    */
   public Solver(final Board initial) {
-    if(initial == null) { throw new NullPointerException("Cannot have a null initial board!"); }
+    if (initial == null) { throw new NullPointerException("Cannot have a null initial board!"); }
     //heuristics = new HashMap<>();
     solution = new Stack<>();
     infeasible = false;
@@ -72,16 +72,16 @@ public class Solver {
     open.insert(node);
     open.insert(new Node(initial.twin(), true));
 
-    while(!open.isEmpty()) {
+    while (!open.isEmpty()) {
       node = open.delMin();
 
       boolean isGoal = node.board.isGoal();
       solved = isGoal && !node.twin;
       infeasible = isGoal && node.twin;
-      if(solved || infeasible) { break; }
+      if (solved || infeasible) { break; }
 
-      for(Board neighbor : node.board.neighbors()) {
-        if(node.parent != null && neighbor.equals(node.parent.board)) {
+      for (Board neighbor : node.board.neighbors()) {
+        if (node.parent != null && neighbor.equals(node.parent.board)) {
           continue;
         }  // critical optimization
         open.insert(new Node(neighbor, node));
@@ -90,9 +90,9 @@ public class Solver {
 
     assert solved ^ infeasible : "Puzzle must either be solved or infeasible, not both or neither!";
 
-    if(solved) {
+    if (solved) {
       solution.push(node.board);
-      while(node.parent != null) {
+      while (node.parent != null) {
         node = node.parent;
         solution.push(node.board);
       }
@@ -114,7 +114,7 @@ public class Solver {
    * @return Minimum number of moves or -1 if unsolvable.
    */
   public int moves() {
-    if(infeasible) { return -1; }
+    if (infeasible) { return -1; }
     return solution.size() - 1;
   }
 
@@ -124,7 +124,7 @@ public class Solver {
    * @return Iterable of boards in sequence.
    */
   public Iterable<Board> solution() {
-    if(infeasible) { return null; }
+    if (infeasible) { return null; }
     return solution;
   }
 
@@ -138,8 +138,8 @@ public class Solver {
     In in = new In(filename);
     int N = in.readInt();
     int[][] blocks = new int[N][N];
-    for(int i = 0; i < N; i++) {
-      for(int j = 0; j < N; j++) {
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j < N; j++) {
         blocks[i][j] = in.readInt();
       }
     }
@@ -158,9 +158,9 @@ public class Solver {
     Solver solver = new Solver(initial);
 
     // print solution to standard output
-    if(!solver.isSolvable()) { StdOut.println("No solution possible"); } else {
+    if (!solver.isSolvable()) { StdOut.println("No solution possible"); } else {
       StdOut.println("Minimum number of moves = " + solver.moves());
-      for(Board board : solver.solution()) { StdOut.println(board); }
+      for (Board board : solver.solution()) { StdOut.println(board); }
     }
   }
 }
