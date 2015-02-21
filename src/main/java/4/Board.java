@@ -1,9 +1,15 @@
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * @author Kevin Crosby
  */
 public class Board {
   private final int N;
-  private final int[][] grid;
+  private final int N2;
+  private final char[] grid;
+  private final int blank;
+  private static final Map<char[], Integer> manhattan = new HashMap<>();
 
   /**
    * Construct a board from an N-by-N array of blocks
@@ -11,13 +17,60 @@ public class Board {
    *
    * @param blocks Array of blocks.
    */
-  public Board(int[][] blocks) {
+  public Board(final int[][] blocks) {
     N = blocks.length;
+    N2 = N * N;
+    int blank = 0;
 
-    grid = new int[N][N];
+    grid = new char[N2];
     for (int r = 0; r < N; r++) {
-      System.arraycopy(blocks[r], 0, grid[r], 0, N);
+      for (int c = 0; c < N; c++) {
+        int i = r * N + c;
+        grid[i] = (char)blocks[r][c];
+        if (blocks[r][c] == 0) { blank = i; }
+      }
     }
+    this.blank = blank;
+  }
+
+  /**
+   * Construct a board from another board.
+   *
+   * @param board Board to copy.
+   */
+  private Board(final Board board) {
+    N = board.N;
+    N2 = board.N2;
+    blank = board.blank;
+
+    grid = new char[N2];
+    System.arraycopy(board.grid, 0, grid, 0, N2);
+  }
+
+  /**
+   * Construct a board from another board, with exchanged adjacent tiles.
+   *
+   * @param board Board to copy.
+   */
+  private Board(final Board board, final int i, final int j) {
+    N = board.N;
+    N2 = board.N2;
+    int dr = i / N - j / N, dc = i % N - j % N;
+    assert Math.abs(dr) != 1 || Math.abs(dc) != 1 : "Board constructor tiles are not adjacent!";
+
+    char[] grid = new char[N2];
+    System.arraycopy(board.grid, 0, grid, 0, N2);
+    exch(grid, i, j);
+    this.grid = grid;
+    if (i == board.blank || j == board.blank) {
+      blank = board.blank + j - i;
+    } else {
+      blank = board.blank;
+    }
+    assert this.grid[blank] == 0 : "Blank is in the wrong place!";
+
+    int h = manhattan.get(board.grid), dh = manhattan(i) + manhattan(j) - manhattan(board, i) - manhattan(board, j);
+    manhattan.put(grid, h + dh);
   }
 
   /**
@@ -36,34 +89,59 @@ public class Board {
    */
   public int hamming() {
     int number = 0;
-    for (int r = 0; r < N; r++) {
-      for (int c = 0; c < N; c++) {
-        if (grid[r][c] == 0) continue;
-        if (grid[r][c] != N * r + c + 1) number++;
-      }
+    for (int i = 0; i < N2; i++) {
+      if (i == blank) { continue; }
+      if (grid[i] != i + 1) { number++; }
     }
     return number;
   }
 
   /**
-   * Sum of Manhattan distances between blocks and goal.
+   * Sum of Manhattan distances between tiles and goal.
    *
    * @return Manhattan distance to goal.
    */
   public int manhattan() {
-    int sum = 0;
-    for (int r = 0; r < N; r++) {
-      for (int c = 0; c < N; c++) {
-        if (grid[r][c] == 0) continue;
-        if (grid[r][c] != N * r + c + 1) {
-          int v = grid[r][c];
-          int dr = Math.abs((v - 1) / N - r);
-          int dc = Math.abs((v - 1) % N - c);
-          sum += dr + dc;
-        }
+    return manhattan(this);
+  }
+
+  private static int manhattan(final Board board) {
+    int N2 = board.N2;
+    char[] grid = board.grid;
+    int blank = board.blank;
+    if (!manhattan.containsKey(grid)) {
+      int sum = 0;
+      for (int i = 0; i < N2; i++) {
+        if (i == blank) { continue; }
+        sum += board.manhattan(i);
       }
+      manhattan.put(grid, sum);
     }
-    return sum;
+    return manhattan.get(grid);
+  }
+
+  /**
+   * Manhattan distances between tiles and goal.
+   *
+   * @param i Tile to compute distance.
+   * @return Manhattan distance for tile to final position in goal.
+   */
+  private int manhattan(final int i) {
+    return manhattan(this, i);
+  }
+
+  private static int manhattan(final Board board, final int i) {
+    int N = board.N;
+    char[] grid = board.grid;
+    int blank = board.blank;
+    int distance = 0;
+    if (i != blank && grid[i] != i + 1) {
+      int v = grid[i];
+      int r = i / N, c = i % N;
+      int dr = Math.abs((v - 1) / N - r), dc = Math.abs((v - 1) % N - c);
+      distance = dr + dc;
+    }
+    return distance;
   }
 
   /**
@@ -72,13 +150,12 @@ public class Board {
    * @return True if board is goal. False otherwise.
    */
   public boolean isGoal() {
-    for (int r = 0; r < N; r++) {
-      for (int c = 0; c < N; c++) {
-        if (grid[r][c] == 0) {
-          if (r != N - 1 || c != N - 1) return false;
-        } else if (grid[r][c] != N * r + c + 1) {
-          return false;
-        }
+    if (blank != N2 - 1) { return false; }
+    for (int i = 0; i < N2; i++) {
+      if (i == blank) {
+        continue; // blank already checked
+      } else if (grid[i] != i + 1) {
+        return false;
       }
     }
     return true;
@@ -90,17 +167,14 @@ public class Board {
    * @return Board with two adjacent blocks transposed.
    */
   public Board twin() {
-    Board twin = new Board(grid);
-    boolean loop = true;
-    for (int r = 0; loop && r < N; r++) {
+    for (int r = 0; r < N; r++) {
       for (int c = 0; c < N - 1; c++) {
-        if (twin.grid[r][c] == 0 || twin.grid[r][c + 1] == 0) continue;
-        exch(twin.grid, r, r, c, c + 1);
-        loop = false;
-        break;
+        int i = r * N + c;
+        if (i == blank || i + 1 == blank) { continue; }
+        return new Board(this, i, i + 1);
       }
     }
-    return twin;
+    return null;
   }
 
   /**
@@ -109,57 +183,44 @@ public class Board {
    * @param y Object to compare.
    * @return True if object equals board.  False otherwise.
    */
-  public boolean equals(Object y) {
-    if (y == this) return true;
-    if (y == null) return false;
-    if (y.getClass() != getClass()) return false;
-    Board that = (Board) y;
-    for (int r = 0; r < N; r++) {
-      for (int c = 0; c < N; c++) {
-        if (grid[r][c] != that.grid[r][c]) return false;
-      }
+  public boolean equals(final Object y) {
+    if (y == this) { return true; }
+    if (y == null) { return false; }
+    if (y.getClass() != getClass()) { return false; }
+    Board that = (Board)y;
+    if (blank != that.blank) { return false; }
+    for (int i = 0; i < N2; i++) {
+      if (grid[i] != that.grid[i]) { return false; }
     }
     return true;
   }
 
-  private void exch(int[][] a, int r, int rp, int c, int cp) {
-    int v = a[r][c];
-    a[r][c] = a[rp][cp];
-    a[rp][cp] = v;
+  private void exch(char[] a, final int i, final int j) {
+    char v = a[i];
+    a[i] = a[j];
+    a[j] = v;
   }
 
   public Iterable<Board> neighbors() {    // all neighboring boards
-    Queue<Board> neighbors = new Queue<>();
+    Stack<Board> neighbors = new Stack<>();
 
-    // find blank
-    boolean loop = true;
-    int r = 0, c = 0;
-    for (int row = 0; loop && row < N; row++) {
-      for (int col = 0; col < N; col++) {
-        if (grid[row][col] == 0) {
-          r = row;
-          c = col;
-          loop = false;
-          break;
-        }
-      }
-    }
+    int r = blank / N, c = blank % N;
 
     for (int dr = -1; dr <= +1; dr += 2) {
       int rp = r + dr;
       if (rp >= 0 && rp < N) {
-        Board neighbor = new Board(grid);
-        exch(neighbor.grid, r, rp, c, c);
-        neighbors.enqueue(neighbor);
+        int i = r * N + c, j = rp * N + c;
+        Board neighbor = new Board(this, i, j);
+        neighbors.push(neighbor);
       }
     }
 
     for (int dc = -1; dc <= +1; dc += 2) {
       int cp = c + dc;
       if (cp >= 0 && cp < N) {
-        Board neighbor = new Board(grid);
-        exch(neighbor.grid, r, r, c, cp);
-        neighbors.enqueue(neighbor);
+        int i = r * N + c, j = r * N + cp;
+        Board neighbor = new Board(this, i, j);
+        neighbors.push(neighbor);
       }
     }
     return neighbors;
@@ -175,7 +236,8 @@ public class Board {
     sb.append(N).append("\n");
     for (int r = 0; r < N; r++) {
       for (int c = 0; c < N; c++) {
-        sb.append(String.format("%2d ", grid[r][c]));
+        int i = N * r + c;
+        sb.append(String.format("%2d ", (int)grid[i]));
       }
       sb.append("\n");
     }

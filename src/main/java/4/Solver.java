@@ -1,31 +1,39 @@
-import java.util.HashSet;
-import java.util.Set;
-
 /**
  * @author Kevin Crosby
  */
 public class Solver {
-  private Queue<Board> solution;
+  private final Stack<Board> solution;
   private boolean infeasible;
 
   private class Node implements Comparable<Node> {
     private final Board board;
     private final Node parent;
     private final int g, h;
+    private final boolean twin;
 
     private Node(final Board board) {
-      this(board, null);
+      this(board, false);
+    }
+
+    private Node(final Board board, boolean twin) {
+      this.board = board;
+      this.parent = null;
+      this.twin = twin;
+      g = 0;
+      h = heuristic();
     }
 
     private Node(final Board board, final Node parent) {
+      assert parent != null : "Parent cannot be null in this constructor!";
       this.board = board;
       this.parent = parent;
-      if (parent != null) {
-        g = parent.g + 1;
-      } else {
-        g = 0;
-      }
-      h = board.manhattan();
+      twin = parent.twin;
+      g = parent.g + 1;
+      h = heuristic();
+    }
+
+    private int heuristic() {
+      return board.manhattan();
     }
 
     private int priority() {
@@ -34,10 +42,14 @@ public class Solver {
 
     @Override
     public int compareTo(final Node that) {
-      return this.priority() - that.priority();
+      int f1 = this.priority(), f2 = that.priority();
+      if (f1 < f2) { return -1; }
+      if (f1 > f2) { return +1; }
+      if (this.h < that.h) { return -1; }
+      if (this.h > that.h) { return +1; }
+      return 0;
     }
   }
-
 
   /**
    * Find a solution to the initial board (using the A* algorithm).
@@ -46,50 +58,50 @@ public class Solver {
    */
   public Solver(final Board initial) {
     if (initial == null) { throw new NullPointerException("Cannot have a null initial board!"); }
-    solution = new Queue<>();
+    //heuristics = new HashMap<>();
+    solution = new Stack<>();
     infeasible = false;
+
+    int enqueued = 0, dequeued = 0, maxPQSize = 0;
 
     boolean solved = false;
 
     MinPQ<Node> open = new MinPQ<>();
-    MinPQ<Node> nepo = new MinPQ<>();
-    Set<Board> closed = new HashSet<>();
-    Set<Board> desolc = new HashSet<>();
 
     Node node = new Node(initial);
-    Node edon = new Node(initial.twin());
     open.insert(node);
-    nepo.insert(edon);
+    open.insert(new Node(initial.twin(), true));
+    enqueued += 2;
 
-    while (!open.isEmpty() && !nepo.isEmpty()) {
+    while (!open.isEmpty()) {
       node = open.delMin();
-      edon = nepo.delMin();
+      dequeued++;
 
-      solved = node.board.isGoal();
-      infeasible = edon.board.isGoal();
+      boolean isGoal = node.board.isGoal();
+      solved = isGoal && !node.twin;
+      infeasible = isGoal && node.twin;
       if (solved || infeasible) { break; }
 
-      closed.add(node.board);
-      desolc.add(edon.board);
-
       for (Board neighbor : node.board.neighbors()) {
-        if (node.parent != null && (neighbor.equals(node.parent.board) || closed.contains(neighbor))) { continue; }  // critical optimization
+        if (node.parent != null && neighbor.equals(node.parent.board)) {
+          continue;
+        }  // critical optimization
         open.insert(new Node(neighbor, node));
+        enqueued++;
       }
-      for (Board robhgien : edon.board.neighbors()) {
-        if (edon.parent != null && (robhgien.equals(edon.parent.board) || desolc.contains(robhgien))) { continue; }  // critical optimization
-        nepo.insert(new Node(robhgien, edon));
-      }
+
+      maxPQSize = Math.max(maxPQSize, open.size());
     }
 
     assert solved ^ infeasible : "Puzzle must either be solved or infeasible, not both or neither!";
 
     if (solved) {
-      solution.enqueue(node.board);
+      solution.push(node.board);
       while (node.parent != null) {
         node = node.parent;
-        solution.enqueue(node.board);
+        solution.push(node.board);
       }
+      StdOut.println("Enqueues: " + enqueued + "\tDequeues: " + dequeued + "\tMaxPQ size: " + maxPQSize);
     }
   }
 
