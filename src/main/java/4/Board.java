@@ -2,6 +2,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * 8-tile puzzle board (works for larger grids)
+ *
  * @author Kevin Crosby
  */
 public class Board {
@@ -9,7 +11,7 @@ public class Board {
   private final int N2;
   private final char[] grid;
   private final int blank;
-  private static final Map<char[], Integer> manhattan = new HashMap<>();
+  private final static Map<char[], Integer> manhattan = new HashMap<>();
 
   /**
    * Construct a board from an N-by-N array of blocks
@@ -20,17 +22,17 @@ public class Board {
   public Board(final int[][] blocks) {
     N = blocks.length;
     N2 = N * N;
-    int blank = 0;
+    int blnk = 0;
 
     grid = new char[N2];
-    for (int r = 0; r < N; r++) {
-      for (int c = 0; c < N; c++) {
+    for(int r = 0; r < N; r++) {
+      for(int c = 0; c < N; c++) {
         int i = r * N + c;
-        grid[i] = (char)blocks[r][c];
-        if (blocks[r][c] == 0) { blank = i; }
+        grid[i] = (char) blocks[r][c];
+        if(blocks[r][c] == 0) { blnk = i; }
       }
     }
-    this.blank = blank;
+    blank = blnk;
   }
 
   /**
@@ -58,11 +60,11 @@ public class Board {
     int dr = i / N - j / N, dc = i % N - j % N;
     assert Math.abs(dr) != 1 || Math.abs(dc) != 1 : "Board constructor tiles are not adjacent!";
 
-    char[] grid = new char[N2];
-    System.arraycopy(board.grid, 0, grid, 0, N2);
-    exch(grid, i, j);
-    this.grid = grid;
-    if (i == board.blank || j == board.blank) {
+    char[] grd = new char[N2];
+    System.arraycopy(board.grid, 0, grd, 0, N2);
+    exch(grd, i, j);
+    grid = grd;
+    if(i == board.blank || j == board.blank) {
       blank = board.blank + j - i;
     } else {
       blank = board.blank;
@@ -70,7 +72,7 @@ public class Board {
     assert this.grid[blank] == 0 : "Blank is in the wrong place!";
 
     int h = manhattan.get(board.grid), dh = manhattan(i) + manhattan(j) - manhattan(board, i) - manhattan(board, j);
-    manhattan.put(grid, h + dh);
+    manhattan.put(grd, h + dh);
   }
 
   /**
@@ -89,9 +91,9 @@ public class Board {
    */
   public int hamming() {
     int number = 0;
-    for (int i = 0; i < N2; i++) {
-      if (i == blank) { continue; }
-      if (grid[i] != i + 1) { number++; }
+    for(int i = 0; i < N2; i++) {
+      if(i == blank) { continue; }
+      if(grid[i] != i + 1) { number++; }
     }
     return number;
   }
@@ -109,10 +111,10 @@ public class Board {
     int N2 = board.N2;
     char[] grid = board.grid;
     int blank = board.blank;
-    if (!manhattan.containsKey(grid)) {
+    if(!manhattan.containsKey(grid)) {
       int sum = 0;
-      for (int i = 0; i < N2; i++) {
-        if (i == blank) { continue; }
+      for(int i = 0; i < N2; i++) {
+        if(i == blank) { continue; }
         sum += board.manhattan(i);
       }
       manhattan.put(grid, sum);
@@ -131,11 +133,12 @@ public class Board {
   }
 
   private static int manhattan(final Board board, final int i) {
+    if(board == null) { return 0; }
     int N = board.N;
     char[] grid = board.grid;
     int blank = board.blank;
     int distance = 0;
-    if (i != blank && grid[i] != i + 1) {
+    if(i != blank && grid[i] != i + 1) {
       int v = grid[i];
       int r = i / N, c = i % N;
       int dr = Math.abs((v - 1) / N - r), dc = Math.abs((v - 1) % N - c);
@@ -150,11 +153,11 @@ public class Board {
    * @return True if board is goal. False otherwise.
    */
   public boolean isGoal() {
-    if (blank != N2 - 1) { return false; }
-    for (int i = 0; i < N2; i++) {
-      if (i == blank) {
+    if(blank != N2 - 1) { return false; }
+    for(int i = 0; i < N2; i++) {
+      if(i == blank) {
         continue; // blank already checked
-      } else if (grid[i] != i + 1) {
+      } else if(grid[i] != i + 1) {
         return false;
       }
     }
@@ -167,10 +170,10 @@ public class Board {
    * @return Board with two adjacent blocks transposed.
    */
   public Board twin() {
-    for (int r = 0; r < N; r++) {
-      for (int c = 0; c < N - 1; c++) {
+    for(int r = 0; r < N; r++) {
+      for(int c = 0; c < N - 1; c++) {
         int i = r * N + c;
-        if (i == blank || i + 1 == blank) { continue; }
+        if(i == blank || i + 1 == blank) { continue; }
         return new Board(this, i, i + 1);
       }
     }
@@ -184,13 +187,13 @@ public class Board {
    * @return True if object equals board.  False otherwise.
    */
   public boolean equals(final Object y) {
-    if (y == this) { return true; }
-    if (y == null) { return false; }
-    if (y.getClass() != getClass()) { return false; }
-    Board that = (Board)y;
-    if (blank != that.blank) { return false; }
-    for (int i = 0; i < N2; i++) {
-      if (grid[i] != that.grid[i]) { return false; }
+    if(y == this) { return true; }
+    if(y == null) { return false; }
+    if(y.getClass() != getClass()) { return false; }
+    Board that = (Board) y;
+    if(blank != that.blank) { return false; }
+    for(int i = 0; i < N2; i++) {
+      if(grid[i] != that.grid[i]) { return false; }
     }
     return true;
   }
@@ -206,18 +209,18 @@ public class Board {
 
     int r = blank / N, c = blank % N;
 
-    for (int dr = -1; dr <= +1; dr += 2) {
+    for(int dr = -1; dr <= +1; dr += 2) {
       int rp = r + dr;
-      if (rp >= 0 && rp < N) {
+      if(rp >= 0 && rp < N) {
         int i = r * N + c, j = rp * N + c;
         Board neighbor = new Board(this, i, j);
         neighbors.push(neighbor);
       }
     }
 
-    for (int dc = -1; dc <= +1; dc += 2) {
+    for(int dc = -1; dc <= +1; dc += 2) {
       int cp = c + dc;
-      if (cp >= 0 && cp < N) {
+      if(cp >= 0 && cp < N) {
         int i = r * N + c, j = r * N + cp;
         Board neighbor = new Board(this, i, j);
         neighbors.push(neighbor);
@@ -234,10 +237,10 @@ public class Board {
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append(N).append("\n");
-    for (int r = 0; r < N; r++) {
-      for (int c = 0; c < N; c++) {
+    for(int r = 0; r < N; r++) {
+      for(int c = 0; c < N; c++) {
         int i = N * r + c;
-        sb.append(String.format("%2d ", (int)grid[i]));
+        sb.append(String.format("%2d ", (int) grid[i]));
       }
       sb.append("\n");
     }
