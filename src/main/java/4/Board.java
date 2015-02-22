@@ -1,13 +1,18 @@
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * 8-tile puzzle board (works for larger grids)
  *
  * @author Kevin Crosby
  */
 public class Board {
-  protected final int N;
-  protected final int N2;
-  protected final char[] grid;
-  protected final int blank;
+  private static final Map<char[], Integer> heuristics = new HashMap<>();
+
+  private final int N;
+  private final int N2;
+  private final char[] grid;
+  private final int blank;
 
   /**
    * Construct a board from an N-by-N array of blocks
@@ -36,7 +41,7 @@ public class Board {
    *
    * @param board Board to copy.
    */
-  protected Board(final Board board) {
+  private Board(final Board board) {
     N = board.N;
     N2 = board.N2;
     blank = board.blank;
@@ -52,7 +57,7 @@ public class Board {
    * @param i     First block to swap.
    * @param j     Second block to swap.
    */
-  protected Board(final Board board, final int i, final int j) {
+  private Board(final Board board, final int i, final int j) {
     N = board.N;
     N2 = board.N2;
     int dr = i / N - j / N, dc = i % N - j % N;
@@ -71,6 +76,13 @@ public class Board {
       blank = board.blank;
     }
     assert this.grid[blank] == 0 : "Blank is in the wrong place!";
+
+    int h = board.manhattan();
+    int dm = manhattan(i) + manhattan(j) - board.manhattan(i) - board.manhattan(j);
+    //int dl = linearConflicts() - board.linearConflicts();
+    int dl = linearConflicts(i, j) - board.linearConflicts(i, j);  // commutative
+    int dh = dm + dl;
+    heuristics.put(grid, h + dh);
   }
 
   /**
@@ -102,12 +114,17 @@ public class Board {
    * @return Manhattan distance to goal.
    */
   public int manhattan() {
-    int sum = 0;
-    for (int i = 0; i < N2; i++) {
-      if (i == blank) { continue; }
-      sum += manhattan(i);
+    if (!heuristics.containsKey(grid)) {
+      int manhattan = 0;
+      for (int i = 0; i < N2; i++) {
+        if (i == blank) { continue; }
+        manhattan += manhattan(i);
+      }
+      int linearConflicts = linearConflicts();
+      int heuristic = manhattan + linearConflicts;
+      heuristics.put(grid, heuristic);
     }
-    return sum;
+    return heuristics.get(grid);
   }
 
   /**
@@ -116,7 +133,7 @@ public class Board {
    * @param i Block to compute distance.
    * @return Manhattan distance for tile to final position in goal.
    */
-  protected int manhattan(final int i) {
+  private int manhattan(final int i) {
     int distance = 0;
     if (i != blank && grid[i] != i + 1) {
       int v = grid[i];
@@ -132,7 +149,7 @@ public class Board {
    *
    * @return Twice the number of inversions per row and column.
    */
-  protected int linearConflicts() {
+  private int linearConflicts() {
     int count = 0;
     for (int r = 0; r < N; r++) {
       for (int c1 = 0; c1 < N - 1; c1++) {
@@ -170,7 +187,7 @@ public class Board {
    * @param j Second block to find linear conflicts.
    * @return Twice the inversion between blocks.
    */
-  protected int linearConflicts(final int i, final int j) {
+  private int linearConflicts(final int i, final int j) {
     int count = 0, r = i / N, c = i % N, rp = j / N, cp = j % N, dr = rp - r, dc = cp - c;
     assert Math.abs(dr) != 1 || Math.abs(dc) != 1 : "Linear conflict blocks are not adjacent!";
     if (i != blank && j != blank) { // if blank is not swapped
@@ -223,7 +240,7 @@ public class Board {
    *
    * @return True if board is solvable. False otherwise.
    */
-  protected boolean isSolvable() {
+  private boolean isSolvable() {
     int inversions = 0;
     for (int i = 0; i < N2 - 1; i++) {
       if (i == blank) { continue; }
@@ -293,11 +310,12 @@ public class Board {
 
   /**
    * Exchange blocks in grid.
+   *
    * @param a Grid.
    * @param i First block to exchange.
    * @param j Second block to exchange.
    */
-  protected void exch(char[] a, final int i, final int j) {
+  private void exch(char[] a, final int i, final int j) {
     char v = a[i];
     a[i] = a[j];
     a[j] = v;
