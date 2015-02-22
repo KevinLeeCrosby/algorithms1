@@ -1,17 +1,13 @@
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * 8-tile puzzle board (works for larger grids)
  *
  * @author Kevin Crosby
  */
 public class Board {
-  private static Map<char[], Integer> manhattan = new HashMap<>();
-  private final int N;
-  private final int N2;
-  private final char[] grid;
-  private final int blank;
+  protected final int N;
+  protected final int N2;
+  protected final char[] grid;
+  protected final int blank;
 
   /**
    * Construct a board from an N-by-N array of blocks
@@ -40,7 +36,7 @@ public class Board {
    *
    * @param board Board to copy.
    */
-  private Board(final Board board) {
+  protected Board(final Board board) {
     N = board.N;
     N2 = board.N2;
     blank = board.blank;
@@ -50,15 +46,17 @@ public class Board {
   }
 
   /**
-   * Construct a board from another board, with exchanged adjacent tiles.
+   * Construct a board from another board, with exchanged adjacent blocks.
    *
    * @param board Board to copy.
+   * @param i     First block to swap.
+   * @param j     Second block to swap.
    */
-  private Board(final Board board, final int i, final int j) {
+  protected Board(final Board board, final int i, final int j) {
     N = board.N;
     N2 = board.N2;
     int dr = i / N - j / N, dc = i % N - j % N;
-    assert Math.abs(dr) != 1 || Math.abs(dc) != 1 : "Board constructor tiles are not adjacent!";
+    assert Math.abs(dr) != 1 || Math.abs(dc) != 1 : "Board constructor blocks are not adjacent!";
 
     char[] grd = new char[N2];
     System.arraycopy(board.grid, 0, grd, 0, N2);
@@ -73,9 +71,6 @@ public class Board {
       blank = board.blank;
     }
     assert this.grid[blank] == 0 : "Blank is in the wrong place!";
-
-    int h = board.manhattan(), dh = manhattan(i) + manhattan(j) - board.manhattan(i) - board.manhattan(j);
-    manhattan.put(grid, h + dh);
   }
 
   /**
@@ -102,29 +97,26 @@ public class Board {
   }
 
   /**
-   * Sum of Manhattan distances between tiles and goal.
+   * Sum of Manhattan distances between blocks and goal.
    *
    * @return Manhattan distance to goal.
    */
   public int manhattan() {
-    if (!manhattan.containsKey(grid)) {
-      int sum = 0;
-      for (int i = 0; i < N2; i++) {
-        if (i == blank) { continue; }
-        sum += manhattan(i);
-      }
-      manhattan.put(grid, sum);
+    int sum = 0;
+    for (int i = 0; i < N2; i++) {
+      if (i == blank) { continue; }
+      sum += manhattan(i);
     }
-    return manhattan.get(grid);
+    return sum;
   }
 
   /**
-   * Manhattan distances between tiles and goal.
+   * Manhattan distance between a block and it's desired position.
    *
-   * @param i Tile to compute distance.
+   * @param i Block to compute distance.
    * @return Manhattan distance for tile to final position in goal.
    */
-  private int manhattan(final int i) {
+  protected int manhattan(final int i) {
     int distance = 0;
     if (i != blank && grid[i] != i + 1) {
       int v = grid[i];
@@ -136,6 +128,121 @@ public class Board {
   }
 
   /**
+   * Compute linear conflicts in board.
+   *
+   * @return Twice the number of inversions per row and column.
+   */
+  protected int linearConflicts() {
+    int count = 0;
+    for (int r = 0; r < N; r++) {
+      for (int c1 = 0; c1 < N - 1; c1++) {
+        int i = r * N + c1;
+        if (i != blank && (grid[i] - 1) / N == r) {
+          for (int c2 = c1 + 1; c2 < N; c2++) {
+            int j = r * N + c2;
+            if (j != blank && (grid[j] - 1) / N == r && grid[i] > grid[j]) {
+              count += 2;
+            }
+          }
+        }
+      }
+    }
+    for (int c = 0; c < N; c++) {
+      for (int r1 = 0; r1 < N - 1; r1++) {
+        int i = r1 * N + c;
+        if (i != blank && (grid[i] - 1) % N == c) {
+          for (int r2 = r1 + 1; r2 < N; r2++) {
+            int j = r2 * N + c;
+            if (j != blank && (grid[j] - 1) % N == c && grid[i] > grid[j]) {
+              count += 2;
+            }
+          }
+        }
+      }
+    }
+    return count;
+  }
+
+  /**
+   * Compute linear conflicts between two blocks (commutative).
+   *
+   * @param i First block to find linear conflicts.
+   * @param j Second block to find linear conflicts.
+   * @return Twice the inversion between blocks.
+   */
+  protected int linearConflicts(final int i, final int j) {
+    int count = 0, r = i / N, c = i % N, rp = j / N, cp = j % N, dr = rp - r, dc = cp - c;
+    assert Math.abs(dr) != 1 || Math.abs(dc) != 1 : "Linear conflict blocks are not adjacent!";
+    if (i != blank && j != blank) { // if blank is not swapped
+      if (dr == 0 && (grid[i] - 1) / N == r && (grid[j] - 1) / N == r) {  // same row
+        if ((c < cp && grid[i] > grid[j]) || (c > cp && grid[i] < grid[j])) {
+          count += 2;
+        }
+      } else if (dc == 0 && (grid[i] - 1) % N == c && (grid[j] - 1) % N == c) {  // same column
+        if ((r < rp && grid[i] > grid[j]) || (r > rp && grid[i] < grid[j])) {
+          count += 2;
+        }
+      }
+    }
+    if (dr == 0) {  // check for changes in columns c and cp
+      for (int cc = Math.min(c, cp); cc <= Math.max(c, cp); cc += Math.abs(dc)) {
+        int ic = r * N + cc;
+        if (ic != blank && (grid[ic] - 1) % N == cc) {
+          for (int rr = 0; rr < N; rr++) {
+            if (rr == r) { continue; }
+            int jc = rr * N + cc;
+            if (jc != blank && (grid[jc] - 1) % N == cc) {
+              if ((r < rr && grid[ic] > grid[jc]) || (r > rr && grid[ic] < grid[jc])) {
+                count += 2;
+              }
+            }
+          }
+        }
+      }
+    } else if (dc == 0) {  // check for changes in rows r and rp
+      for (int rr = Math.min(r, rp); rr <= Math.max(r, rp); rr += Math.abs(dr)) {
+        int ir = rr * N + c;
+        if (ir != blank && (grid[ir] - 1) / N == rr) {
+          for (int cc = 0; cc < N; cc++) {
+            if (cc == c) { continue; }
+            int jr = rr * N + cc;
+            if (jr != blank && (grid[jr] - 1) / N == rr) {
+              if ((c < cc && grid[ir] > grid[jr]) || (c > cc && grid[ir] < grid[jr])) {
+                count += 2;
+              }
+            }
+          }
+        }
+      }
+    }
+    return count;
+  }
+
+  /**
+   * Is this board solvable?
+   *
+   * @return True if board is solvable. False otherwise.
+   */
+  protected boolean isSolvable() {
+    int inversions = 0;
+    for (int i = 0; i < N2 - 1; i++) {
+      if (i == blank) { continue; }
+      for (int j = i + 1; j < N2; j++) {
+        if (j == blank) { continue; }
+        if (grid[i] > grid[j]) {
+          inversions++;
+        }
+      }
+    }
+    if (N % 2 == 1) { // if board size is odd
+      return inversions % 2 == 0;
+    } else {  // if board size is even
+      return ((blank / N) % 2 == 0) == (inversions % 2 == 1);
+    }
+  }
+
+
+  /**
    * Is this board the goal board?
    *
    * @return True if board is goal. False otherwise.
@@ -143,9 +250,7 @@ public class Board {
   public boolean isGoal() {
     if (blank != N2 - 1) { return false; }
     for (int i = 0; i < N2; i++) {
-      if (i == blank) {
-        continue; // blank already checked
-      } else if (grid[i] != i + 1) {
+      if (i != blank && grid[i] != i + 1) {
         return false;
       }
     }
@@ -186,22 +291,34 @@ public class Board {
     return true;
   }
 
-  private void exch(char[] a, final int i, final int j) {
+  /**
+   * Exchange blocks in grid.
+   * @param a Grid.
+   * @param i First block to exchange.
+   * @param j Second block to exchange.
+   */
+  protected void exch(char[] a, final int i, final int j) {
     char v = a[i];
     a[i] = a[j];
     a[j] = v;
   }
 
-  public Iterable<Board> neighbors() {    // all neighboring boards
+  /**
+   * Compute all neighboring boards.
+   *
+   * @return All neighboring boards.
+   */
+  public Iterable<Board> neighbors() {
     Stack<Board> neighbors = new Stack<>();
 
     int r = blank / N, c = blank % N;
+    Board neighbor;
 
     for (int dr = -1; dr <= +1; dr += 2) {
       int rp = r + dr;
       if (rp >= 0 && rp < N) {
         int i = r * N + c, j = rp * N + c;
-        Board neighbor = new Board(this, i, j);
+        neighbor = new Board(this, i, j);
         neighbors.push(neighbor);
       }
     }
@@ -210,7 +327,7 @@ public class Board {
       int cp = c + dc;
       if (cp >= 0 && cp < N) {
         int i = r * N + c, j = r * N + cp;
-        Board neighbor = new Board(this, i, j);
+        neighbor = new Board(this, i, j);
         neighbors.push(neighbor);
       }
     }
@@ -241,10 +358,12 @@ public class Board {
    * @param args Input arguments.
    */
   public static void main(String[] args) {
-    int[][] initial = {{1, 2, 3, 4}, {5, 6, 7, 8}, {0, 10, 11, 12}, {9, 13, 14, 15}};
+    int[][] initial = {{12, 1, 10, 2}, {7, 0, 4, 14}, {5, 11, 9, 15}, {8, 13, 6, 3}};
 
     Board board = new Board(initial);
     StdOut.println(board);
+
+    StdOut.println("Is solvable?  " + board.isSolvable());
 
     for (Board neighbor : board.neighbors()) {
       StdOut.println(neighbor);
