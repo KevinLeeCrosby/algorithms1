@@ -7,7 +7,7 @@ import java.util.Map;
  * @author Kevin Crosby
  */
 public class Board {
-  private static final Map<char[], Integer> heuristics = new HashMap<>();
+  private static Map<char[], Integer> heuristics = new HashMap<>();
 
   private final int N;
   private final int N2;
