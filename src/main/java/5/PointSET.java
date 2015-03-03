@@ -7,13 +7,13 @@ import java.util.TreeSet;
  * @author Kevin Crosby
  */
 public class PointSET {
-  private final Set<Point2D> set;
+  private final SET<Point2D> set;
 
   /**
    * Construct an empty set of points.
    */
   public PointSET() {
-    set = new TreeSet<>(Point2D.Y_ORDER);
+    set = new SET<>();
   }
 
   /**
@@ -59,13 +59,18 @@ public class PointSET {
    * Draw all points to standard draw.
    */
   public void draw() {
+    StdDraw.setXscale(-0.01, 1.01);
+    StdDraw.setYscale(-0.01, 1.01);
+    StdDraw.setPenColor(StdDraw.BLACK);
+    StdDraw.setPenRadius();
+    new RectHV(0.0, 0.0, 1.0, 1.0).draw();
+
     StdDraw.setPenColor(StdDraw.BLACK);
     StdDraw.setPenRadius(.01);
 
     for (final Point2D point : set) {
       point.draw(); // StdDraw.point(point.x(), point.y());
     }
-    StdDraw.show(0);
   }
 
   /**
@@ -118,7 +123,7 @@ public class PointSET {
     String filename = args[0];
     In in = new In(filename);
 
-    StdDraw.show(0);
+    StdDraw.show();
 
     // initialize the two data structures with point from standard input
     PointSET brute = new PointSET();
@@ -127,7 +132,9 @@ public class PointSET {
       double y = in.readDouble();
       Point2D p = new Point2D(x, y);
       brute.insert(p);
+      StdDraw.clear();
+      brute.draw();
+      StdDraw.show();
     }
-    brute.draw();
   }
 }

@@ -20,7 +20,11 @@ public class KdTree {
       }};
 
   private static int compare(final Point2D point1, final Point2D point2, final boolean isVertical) {
-    return comparator.get(isVertical).compare(point1, point2);
+    int result = comparator.get(isVertical).compare(point1, point2);
+    if (result == 0) {
+      result = comparator.get(!isVertical).compare(point1, point2);
+    }
+    return result;
   }
 
   private static class Node {
@@ -73,7 +77,7 @@ public class KdTree {
    * @param point Point to add to the set.
    */
   public void insert(final Point2D point) { // logarithmic in N
-    if (point == null) throw new NullPointerException();
+    if (point == null) { throw new NullPointerException(); }
 
     final RectHV rectangle = new RectHV(0, 0, 1, 1);
     root = insert(root, point, rectangle, true);
@@ -129,7 +133,7 @@ public class KdTree {
    * @return True if point is in tree, false otherwise.
    */
   public boolean contains(final Point2D point) { // logarithmic in N
-    if (point == null) throw new NullPointerException();
+    if (point == null) { throw new NullPointerException(); }
     return contains(root, point, true);
   }
 
@@ -142,7 +146,7 @@ public class KdTree {
    * @return True if point is in tree, false otherwise.
    */
   private boolean contains(final Node node, final Point2D point, final boolean isVertical) {
-    if (node == null) return false;
+    if (node == null) { return false; }
     int cmp = compare(point, node.point, isVertical);
     if (cmp < 0) {
       return contains(node.left, point, !isVertical);
@@ -157,12 +161,17 @@ public class KdTree {
    * Draw all points to standard draw.
    */
   public void draw() {
+    StdDraw.setXscale(-0.01, 1.01);
+    StdDraw.setYscale(-0.01, 1.01);
+    StdDraw.setPenColor(StdDraw.BLACK);
+    StdDraw.setPenRadius();
+    root.rectangle.draw();
+
     draw(root, true);
-    StdDraw.show(0);
   }
 
   private void draw(final Node node, final boolean isVertical) {
-    if (node == null) return;
+    if (node == null) { return; }
     Point2D point1, point2;
     if (isVertical) {
       StdDraw.setPenColor(StdDraw.RED);
@@ -189,68 +198,87 @@ public class KdTree {
   /**
    * All points that are inside the rectangle.
    *
+   * To find all points contained in a given query rectangle, start at the root and recursively search for points in
+   * both subtrees using the following pruning rule: if the query rectangle does not intersect the rectangle
+   * corresponding to a node, there is no need to explore that node (or its subtrees). A subtree is searched only if it
+   * might contain a point contained in the query rectangle.
+   *
    * @param rect Rectangle with points of interest.
    * @return Iterable of points of interest within rectangle.
    */
   public Iterable<Point2D> range(final RectHV rect) { // logarithmic in N
-    if (rect == null) throw new NullPointerException();
+    if (rect == null) { throw new NullPointerException(); }
     return null;
   }
 
   //private Iterable<Point2D> range(final Node node, final RectHV rect, final boolean isVertical) {
-//    int cmp = compare(point, node.rectangle, isVertical);
-//    if (cmp < 0) {
-//      return range(node.left, rectangle, !isVertical);
-//    } else if (cmp > 0) {
-//      return range(node.right, point, !isVertical);
-//    } else {
-//      return node.point;
-//    }
+  //    int cmp = compare(point, node.rectangle, isVertical);
+  //    if (cmp < 0) {
+  //      return range(node.left, rectangle, !isVertical);
+  //    } else if (cmp > 0) {
+  //      return range(node.right, point, !isVertical);
+  //    } else {
+  //      return node.point;
+  //    }
   //}
 
   /**
    * A nearest neighbor in the set to point; null if the set is empty.
    *
+   * To find a closest point to a given query point, start at the root and recursively search in both subtrees using
+   * the following pruning rule: if the closest point discovered so far is closer than the distance between the query
+   * point and the rectangle corresponding to a node, there is no need to explore that node (or its subtrees). That is,
+   * a node is searched only if it might contain a point that is closer than the best one found so far. The
+   * effectiveness of the pruning rule depends on quickly finding a nearby point. To do this, organize your recursive
+   * method so that when there are two possible subtrees to go down, you always choose the subtree that is on the same
+   * side of the splitting line as the query point as the first subtree to explore—the closest point found while
+   * exploring the first subtree may enable pruning of the second subtree.
+   *
    * @param point Point to find nearest neighbor from.
    * @return Nearest neighbor.
    */
   public Point2D nearest(final Point2D point) { // logarithmic in N
-    if (point == null) throw new NullPointerException();
-    if (isEmpty()) return null;
+    if (point == null) { throw new NullPointerException(); }
+    if (isEmpty()) { return null; }
     return nearest(root, point, null, Double.POSITIVE_INFINITY, true);
   }
 
   private Point2D nearest(final Node node, final Point2D point, Point2D bestPoint, double minDistanceSquared, final boolean isVertical) {
-    if (node == null) return null;
-    double distanceSquared = point.distanceSquaredTo(node.point);
-    if (minDistanceSquared > distanceSquared) {
-      bestPoint = node.point;
-      minDistanceSquared = distanceSquared;
-    }
+    if (node == null || minDistanceSquared < node.rectangle.distanceSquaredTo(point)) { return null; }
+
     int cmp = compare(point, node.point, isVertical);
+    Node nearNode, farNode;
     if (cmp < 0) {
-      Point2D leftPoint = nearest(node.left, point, bestPoint, minDistanceSquared, !isVertical);
-      if (leftPoint != null && minDistanceSquared > point.distanceSquaredTo(leftPoint)) {
-        return leftPoint;
-      } else {
-        Point2D rightPoint = nearest(node.right, point, bestPoint, minDistanceSquared, !isVertical);
-        if (rightPoint != null && minDistanceSquared > point.distanceSquaredTo(rightPoint)) {
-          return rightPoint;
-        }
-      }
+      nearNode = node.left;
+      farNode = node.right;
     } else if (cmp > 0) {
-      Point2D rightPoint = nearest(node.right, point, bestPoint, minDistanceSquared, !isVertical);
-      if (rightPoint != null && minDistanceSquared > point.distanceSquaredTo(rightPoint)) {
-        return rightPoint;
-      } else {
-        Point2D leftPoint = nearest(node.left, point, bestPoint, minDistanceSquared, !isVertical);
-        if (leftPoint != null && minDistanceSquared > point.distanceSquaredTo(leftPoint)) {
-          return leftPoint;
-        }
-      }
+      nearNode = node.right;
+      farNode = node.left;
     } else {
       return node.point;
     }
+
+    double distanceSquared = node.point.distanceSquaredTo(point);
+    if (minDistanceSquared > distanceSquared) {
+      minDistanceSquared = distanceSquared;
+      bestPoint = node.point;
+    }
+    Point2D nearPoint = nearest(nearNode, point, bestPoint, minDistanceSquared, !isVertical);
+    if (nearPoint != null) {
+      distanceSquared = nearPoint.distanceSquaredTo(point);
+      if (minDistanceSquared > distanceSquared) {
+        minDistanceSquared = distanceSquared;
+        bestPoint = nearPoint;
+      }
+    }
+    Point2D farPoint = nearest(farNode, point, bestPoint, minDistanceSquared, !isVertical);
+    if (farPoint != null) {
+      distanceSquared = farPoint.distanceSquaredTo(point);
+      if (minDistanceSquared > distanceSquared) {
+        bestPoint = farPoint;
+      }
+    }
+
     return bestPoint;
   }
 
@@ -263,7 +291,7 @@ public class KdTree {
     String filename = args[0];
     In in = new In(filename);
 
-    StdDraw.show(0);
+    StdDraw.show();
 
     KdTree kdtree = new KdTree();
     while (!in.isEmpty()) {
@@ -271,7 +299,9 @@ public class KdTree {
       double y = in.readDouble();
       Point2D p = new Point2D(x, y);
       kdtree.insert(p);
+      StdDraw.clear();
+      kdtree.draw();
+      StdDraw.show();
     }
-    kdtree.draw();
   }
 }
