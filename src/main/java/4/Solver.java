@@ -10,7 +10,7 @@ public class Solver {
   /**
    * Node class to put on priority queue.
    */
-  private class Node implements Comparable<Node> {
+  private static class Node implements Comparable<Node> {
     private final Board board;
     private final Node parent;
     private final int g, h;
