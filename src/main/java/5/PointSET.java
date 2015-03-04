@@ -1,6 +1,3 @@
-import java.util.Set;
-import java.util.TreeSet;
-
 /**
  * Represents a set of points in the unit square.  Implemented with a red-black BST.
  *
@@ -40,7 +37,7 @@ public class PointSET {
    * @param point Point to add to the set.
    */
   public void insert(final Point2D point) { // logarithmic in N
-    if (point == null) throw new NullPointerException();
+    if (point == null) { throw new NullPointerException(); }
     set.add(point);
   }
 
@@ -51,7 +48,7 @@ public class PointSET {
    * @return True if point is in the set, false otherwise.
    */
   public boolean contains(final Point2D point) { // logarithmic in N
-    if (point == null) throw new NullPointerException();
+    if (point == null) { throw new NullPointerException(); }
     return set.contains(point);
   }
 
@@ -80,7 +77,7 @@ public class PointSET {
    * @return Iterable of points of interest within rectangle.
    */
   public Iterable<Point2D> range(final RectHV rect) { // linear in N
-    if (rect == null) throw new NullPointerException();
+    if (rect == null) { throw new NullPointerException(); }
 
     Queue<Point2D> points = new Queue<>();
     for (final Point2D point : set) {
@@ -99,8 +96,8 @@ public class PointSET {
    * @return Nearest neighbor.
    */
   public Point2D nearest(final Point2D p) { // linear in N
-    if (p == null) throw new NullPointerException();
-    if (isEmpty()) return null;
+    if (p == null) { throw new NullPointerException(); }
+    if (isEmpty()) { return null; }
 
     double minDistanceSquared = Double.POSITIVE_INFINITY;
     Point2D nearestNeighbor = null;

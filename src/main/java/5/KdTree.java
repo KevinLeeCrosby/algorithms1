@@ -1,7 +1,4 @@
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -15,18 +12,12 @@ public class KdTree {
   private Node root;
   private int size;
 
-  private static final Map<Boolean, Comparator<Point2D>> comparator =
-      new HashMap<Boolean, Comparator<Point2D>>() {{
-        put(true, Point2D.X_ORDER);
-        put(false, Point2D.Y_ORDER);
-      }};
-
-  private static int compare(final Point2D point1, final Point2D point2, final boolean isVertical) {
-    int result = comparator.get(isVertical).compare(point1, point2);
-    if (result == 0) {
-      result = comparator.get(!isVertical).compare(point1, point2);
-    }
-    return result;
+  /**
+   * Construct an empty Kd-Tree of points.
+   */
+  public KdTree() {
+    root = null;
+    size = 0;
   }
 
   private static class Node {
@@ -48,14 +39,6 @@ public class KdTree {
   }
 
   /**
-   * Construct an empty Kd-Tree of points.
-   */
-  public KdTree() {
-    root = null;
-    size = 0;
-  }
-
-  /**
    * Is the set empty?
    *
    * @return True if set is empty, false otherwise.
@@ -71,6 +54,21 @@ public class KdTree {
    */
   public int size() {
     return size;
+  }
+
+  private static int compare(final Point2D p, final Point2D q, final boolean isVertical) {
+    if (isVertical) {
+      if (p.x() < q.x()) { return -1; }
+      if (p.x() > q.x()) { return +1; }
+      if (p.y() < q.y()) { return -1; }
+      if (p.y() > q.y()) { return +1; }
+    } else {
+      if (p.y() < q.y()) { return -1; }
+      if (p.y() > q.y()) { return +1; }
+      if (p.x() < q.x()) { return -1; }
+      if (p.x() > q.x()) { return +1; }
+    }
+    return 0;
   }
 
   /**
@@ -237,8 +235,8 @@ public class KdTree {
     return nearest(root, point, null, Double.POSITIVE_INFINITY, true);
   }
 
-  private Point2D nearest(final Node node, final Point2D point, Point2D bestPoint, double minDistanceSquared, final boolean isVertical) {
-    if (node == null || minDistanceSquared < node.rectangle.distanceSquaredTo(point)) { return null; }
+  private Point2D nearest(final Node node, final Point2D point, final Point2D bestP, final double minDSq, final boolean isVertical) {
+    if (node == null || minDSq < node.rectangle.distanceSquaredTo(point)) { return null; }
 
     int cmp = compare(point, node.point, isVertical);
     Node nearNode, farNode;
@@ -251,6 +249,10 @@ public class KdTree {
     } else {
       return node.point;
     }
+
+    Point2D bestPoint = bestP;
+    double minDistanceSquared = minDSq;
+
 
     double distanceSquared = node.point.distanceSquaredTo(point);
     if (minDistanceSquared > distanceSquared) {
