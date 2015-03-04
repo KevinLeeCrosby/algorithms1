@@ -1,6 +1,8 @@
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Mutable data type that uses a 2d-tree of points in the unit square.  A 2d-tree is a generalization of a BST to
@@ -137,14 +139,6 @@ public class KdTree {
     return contains(root, point, true);
   }
 
-  /**
-   * Does the subtree contain point?
-   *
-   * @param node       Root of subtree.
-   * @param point      Point to test.
-   * @param isVertical True if node is vertical, false if node is horizontal.
-   * @return True if point is in tree, false otherwise.
-   */
   private boolean contains(final Node node, final Point2D point, final boolean isVertical) {
     if (node == null) { return false; }
     int cmp = compare(point, node.point, isVertical);
@@ -203,24 +197,24 @@ public class KdTree {
    * corresponding to a node, there is no need to explore that node (or its subtrees). A subtree is searched only if it
    * might contain a point contained in the query rectangle.
    *
-   * @param rect Rectangle with points of interest.
+   * @param rectangle Rectangle with points of interest.
    * @return Iterable of points of interest within rectangle.
    */
-  public Iterable<Point2D> range(final RectHV rect) { // logarithmic in N
-    if (rect == null) { throw new NullPointerException(); }
-    return null;
+  public Iterable<Point2D> range(final RectHV rectangle) { // logarithmic in N
+    if (rectangle == null) { throw new NullPointerException(); }
+    return range(root, rectangle, true);
   }
 
-  //private Iterable<Point2D> range(final Node node, final RectHV rect, final boolean isVertical) {
-  //    int cmp = compare(point, node.rectangle, isVertical);
-  //    if (cmp < 0) {
-  //      return range(node.left, rectangle, !isVertical);
-  //    } else if (cmp > 0) {
-  //      return range(node.right, point, !isVertical);
-  //    } else {
-  //      return node.point;
-  //    }
-  //}
+  private Set<Point2D> range(final Node node, final RectHV rectangle, final boolean isVertical) {
+    if (node == null || !node.rectangle.intersects(rectangle)) { return new HashSet<>(); }
+
+    Set<Point2D> points = new HashSet<>();
+    if (rectangle.contains(node.point)) { points.add(node.point); }
+    points.addAll(range(node.left, rectangle, !isVertical));
+    points.addAll(range(node.right, rectangle, !isVertical));
+
+    return points;
+  }
 
   /**
    * A nearest neighbor in the set to point; null if the set is empty.
