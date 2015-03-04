@@ -100,8 +100,8 @@ public class KdTree {
         newRectangle = makeRectangle(node.point, node.rectangle, isVertical, false);
       }
       node.right = insert(node.right, point, newRectangle, !isVertical);
-    } else {
-      StdOut.println("Point " + point + " already inserted!");  // point already inserted, do nothing
+    //} else {
+      // point already inserted, do nothing
     }
     return node;
   }
